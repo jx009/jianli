@@ -1,0 +1,31 @@
+.ant-pro-top-nav-header-main {
+    display: flex;
+    height: 48px;
+    padding-left: 16px;
+    padding-right: 16px;
+    align-items: center;
+    justify-content: space-between;
+}
+.ant-pro-top-nav-header-main-left {
+    display: flex;
+    align-items: center;
+}
+.ant-pro-top-nav-header-logo {
+    display: flex;
+    align-items: center;
+    margin-right: 16px;
+}
+.ant-pro-top-nav-header-logo img {
+    height: 28px;
+    margin-right: 8px;
+}
+.ant-pro-top-nav-header-logo h1 {
+    color: #000;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+.ant-menu-horizontal {
+    line-height: 46px;
+    border-bottom: 0;
+}
