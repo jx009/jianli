@@ -44,9 +44,9 @@ const DEFAULT_MODULES = [
     type: 'text',
     title: '专业技能',
     data: {
-      content: '1. 熟练掌握 React, Vue 等主流前端框架。
+      content: `1. 熟练掌握 React, Vue 等主流前端框架。
 2. 熟悉 Node.js 后端开发，了解 MySQL, MongoDB。
-3. 具备良好的代码规范和团队协作能力。'
+3. 具备良好的代码规范和团队协作能力.`
     }
   }
 ];
