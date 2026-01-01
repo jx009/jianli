@@ -28,7 +28,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import useResumeStore from '../../../store/useResumeStore';
+import useResumeStore from '../../../../store/useResumeStore';
 
 const { TextArea } = Input;
 const { Panel } = Collapse;

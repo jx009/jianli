@@ -1,5 +1,5 @@
 import React from 'react';
-import useResumeStore from '../../../store/useResumeStore';
+import useResumeStore from '../../../../store/useResumeStore';
 import { TEMPLATES } from '../../../../templates';
 
 const Previewer = () => {

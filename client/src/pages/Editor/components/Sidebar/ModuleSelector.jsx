@@ -12,7 +12,7 @@ import {
   GlobalOutlined,
   CheckCircleFilled
 } from '@ant-design/icons';
-import useResumeStore from '../../../store/useResumeStore';
+import useResumeStore from '../../../../store/useResumeStore';
 
 // --- Icon Helpers ---
 const getIcon = (name) => {
