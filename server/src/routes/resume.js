@@ -1,32 +1,81 @@
 import express from 'express';
 import { prisma } from '../index.js';
-import * as resumeController from '../controllers/resumeController.js';
+import { authMiddleware } from '../utils/auth.js';
 
 const router = express.Router();
 
-// Mock User Middleware
-const mockUser = async (req, res, next) => {
-  let user = await prisma.user.findFirst();
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        openid: 'mock_openid_123',
-        nickname: '测试用户'
-      }
+// 1. 获取我的简历列表 (Dashboard)
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const resumes = await prisma.resume.findMany({
+      where: { userId: req.userId },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, title: true, updatedAt: true } // Don't fetch heavy content
     });
+    res.json(resumes);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
-  req.user = user;
-  next();
-};
+});
 
-router.use(mockUser);
+// 2. 获取单份简历详情
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const resume = await prisma.resume.findUnique({
+      where: { id: parseInt(id) }
+    });
+    if (!resume) return res.status(404).json({ error: 'Not found' });
+    
+    // Permission check could be here (public vs private)
+    
+    res.json(resume);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
-// Define Routes mapping to Controller methods
-router.get('/', resumeController.getAllResumes);
-router.get('/:id', resumeController.getResumeById);
-router.post('/', resumeController.createResume);
-router.put('/:id', resumeController.updateResume);
-router.delete('/:id', resumeController.deleteResume);
-router.get('/:id/pdf', resumeController.exportResumePdf);
+// 3. 创建/保存简历 (Upsert)
+// 如果 ID 存在则更新，不存在则创建
+router.post('/', authMiddleware, async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        
+        const newResume = await prisma.resume.create({
+            data: {
+                title: title || '未命名简历',
+                content: content, // Json
+                userId: req.userId
+            }
+        });
+        res.json(newResume);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create' });
+    }
+});
+
+router.put('/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    
+    try {
+        // Verify ownership
+        const existing = await prisma.resume.findUnique({ where: { id: parseInt(id) } });
+        if (!existing) return res.status(404).json({ error: 'Not found' });
+        if (existing.userId !== req.userId) return res.status(403).json({ error: 'Forbidden' });
+
+        const updated = await prisma.resume.update({
+            where: { id: parseInt(id) },
+            data: {
+                title,
+                content
+            }
+        });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update' });
+    }
+});
 
 export default router;

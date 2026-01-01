@@ -1,88 +1,120 @@
-/* Editor.css - 强制覆盖所有乱七八糟的样式，保证布局稳固 */
-
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden; /* 防止出现双重滚动条 */
-}
-
 .editor-layout {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: #f0f2f5;
+  background-color: #f7f8fa; /* 更柔和的背景灰 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* Header */
 .editor-header {
-  height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
-  z-index: 100;
-  flex-shrink: 0;
+  padding: 0 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); /* 极淡的阴影 */
+  z-index: 20;
 }
 
-.back-link {
-  color: #666;
-  font-size: 14px;
-  text-decoration: none;
+.brand-logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 12px;
+  letter-spacing: -0.5px;
 }
 
-.back-link:hover {
+.brand-logo .logo-icon {
   color: #24be58;
+  font-size: 26px;
 }
 
+.resume-title-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+}
+
+/* Workspace Grid */
 .editor-workspace {
   flex: 1;
   display: flex;
-  overflow: hidden; /* 关键：防止整个页面滚动 */
-  position: relative;
+  overflow: hidden;
 }
 
+/* Left Sidebar */
 .editor-sidebar-left {
-  width: 260px;
-  background: #fff;
-  border-right: 1px solid #e8e8e8;
-  overflow-y: auto;
-  z-index: 10;
+  width: 320px; /* 稍微宽一点 */
+  background: #ffffff;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-}
-
-.editor-sidebar-right {
-  width: 320px;
-  background: #fff;
-  border-left: 1px solid #e8e8e8;
-  overflow-y: auto;
+  height: 100%;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.01);
   z-index: 10;
-  padding: 20px;
 }
 
-.editor-canvas-area {
+/* Middle: Form Area */
+.editor-form-area {
   flex: 1;
-  background: #e3e3e3;
-  overflow-y: auto; /* 画布区域单独滚动 */
-  padding: 40px;
+  padding: 32px;
+  overflow-y: overlay; /* 使用 overlay 滚动条 */
   display: flex;
   justify-content: center;
+  background-image: radial-gradient(#e1e1e1 1px, transparent 1px);
+  background-size: 20px 20px; /* 点阵背景 */
 }
 
-/* 模拟 A4 纸 */
-.resume-canvas {
+.form-container {
+  width: 100%;
+  max-width: 720px;
+  padding-bottom: 80px;
+}
+
+/* Right: Preview Area */
+.editor-preview-area {
+  width: 45%; 
+  min-width: 450px;
+  max-width: 900px;
+  background: #3e4042; /* 深色背景更能衬托白纸 */
+  padding: 40px;
+  overflow-y: overlay;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  box-shadow: inset 6px 0 12px rgba(0,0,0,0.05);
+}
+
+/* A4 Paper */
+.a4-paper {
   width: 210mm;
   min-height: 297mm;
   background: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  padding: 40px;
-  box-sizing: border-box;
-  /* 确保画布内的内容不会被挤压 */
-  flex-shrink: 0; 
+  /* 真实的纸张投影 */
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0,0,0,0.1); 
+  transform-origin: top center;
+  transition: transform 0.2s;
+  border-radius: 2px;
+}
+
+/* Custom Scrollbar Polish */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
