@@ -1,21 +1,20 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Home from './pages/Home';
-import Template from './pages/Template';
+import TemplateCenter from './pages/TemplateCenter';
 import Editor from './pages/Editor';
-import Dashboard from './pages/Dashboard';
-import Preview from './pages/Preview';
-import Header from './components/Layout/Header';
-import Footer from './components/Layout/Footer';
+import Navbar from './components/Layout/Navbar';
 
-// Layout component for standard pages
+// Layout with Navbar
 const MainLayout = () => (
-  <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Header />
+  <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Navbar />
     <div style={{ flex: 1 }}>
       <Outlet />
     </div>
-    <Footer />
+    <footer style={{ textAlign: 'center', padding: '40px', color: '#999', background: '#fafafa', borderTop: '1px solid #eee' }}>
+        © 2026 职达简历 | 助你轻松斩获 Offer
+    </footer>
   </div>
 );
 
@@ -23,16 +22,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Preview Route (No Layout) */}
-        <Route path="/preview/:id" element={<Preview />} />
-
-        {/* Main Application Routes */}
+        {/* Pages with Navbar */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/templates" element={<Template />} />
-          <Route path="/editor/:id" element={<Editor />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/templates" element={<TemplateCenter />} />
+          <Route path="/dashboard" element={<Home />} /> {/* Reuse Home logic which switches to Dashboard view */}
         </Route>
+
+        {/* Editor (Standalone, Fullscreen) */}
+        <Route path="/editor/:id" element={<Editor />} />
       </Routes>
     </BrowserRouter>
   );
