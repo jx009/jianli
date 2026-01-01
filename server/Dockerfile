@@ -26,5 +26,7 @@ RUN npm install
 COPY . .
 
 EXPOSE 3000
+# Generate Prisma Client before start
+RUN npx prisma generate
 CMD ["npm", "start"]
 
