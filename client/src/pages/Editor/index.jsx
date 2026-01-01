@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useResumeStore from '../../store/useResumeStore';
-import Sidebar from './Sidebar';
+import LeftSidebar from './LeftSidebar';
 import Canvas from './Canvas';
 import ConfigPanel from './ConfigPanel';
 import { Button, message, Spin } from 'antd';
@@ -8,19 +8,22 @@ import { SaveOutlined, DownloadOutlined, LeftOutlined } from '@ant-design/icons'
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 
+// 引入原站样式，虽然类名是混淆的，但部分全局样式可能有用
+// 关键是我们要自己写一套稳的 layout
+import './Editor.css'; 
+
 const Editor = () => {
   const { id } = useParams();
-  const { resume, loadResume } = useResumeStore();
-  const [loading, setLoading] = React.useState(true);
+  const { resume } = useResumeStore();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
         axios.get(`/api/resumes/${id}`)
             .then(res => {
-                // If content is empty/new, might rely on store defaults, but normally we load it
-                // Assuming loadResume action exists or we just direct set
-                // For now, let's just assume store has a 'setResume'
-                useResumeStore.setState({ resume: res.data.content });
+                if (res.data.content && res.data.content.modules) {
+                    useResumeStore.setState({ resume: res.data.content });
+                }
                 setLoading(false);
             })
             .catch(err => {
@@ -33,7 +36,7 @@ const Editor = () => {
   const handleSave = async () => {
     try {
         await axios.put(`/api/resumes/${id}`, {
-            title: '我的简历', // Should allow editing title
+            title: '我的简历', 
             content: resume
         });
         message.success('保存成功');
@@ -43,33 +46,49 @@ const Editor = () => {
   };
 
   const handleDownload = () => {
-      window.open(`http://localhost:3000/api/resumes/${id}/pdf`, '_blank');
+      window.open(`/api/resumes/${id}/pdf`, '_blank');
   };
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: 100 }}><Spin size="large" /></div>;
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><Spin size="large" tip="正在加载简历..." /></div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <div style={{ height: 50, background: '#fff', borderBottom: '1px solid #ddd', display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between' }}>
-            <Link to="/dashboard"><Button icon={<LeftOutlined />} type="text">返回</Button></Link>
-            <div style={{ fontWeight: 'bold' }}>简历编辑器</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-                <Button icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
-                <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownload}>导出 PDF</Button>
+    <div className="editor-layout">
+        {/* 顶部导航栏 */}
+        <header className="editor-header">
+            <div className="header-left">
+                <Link to="/dashboard" className="back-link">
+                    <LeftOutlined /> 返回我的简历
+                </Link>
             </div>
-        </div>
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#f0f2f5' }}>
-            <div style={{ width: 280, background: '#fff', borderRight: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column' }}>
-                <Sidebar />
+            <div className="header-center">
+                <strong>简历编辑器</strong>
             </div>
-            
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '40px' }}>
-                <Canvas />
+            <div className="header-right">
+                <Button icon={<SaveOutlined />} onClick={handleSave} style={{ marginRight: 10 }}>保存</Button>
+                <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownload} style={{ background: '#24be58', borderColor: '#24be58' }}>
+                    导出 PDF
+                </Button>
             </div>
-            
-            <div style={{ width: 320, background: '#fff', borderLeft: '1px solid #e8e8e8', padding: 20 }}>
+        </header>
+
+        {/* 主体工作区 */}
+        <div className="editor-workspace">
+            {/* 左侧：模块选择 (固定宽度) */}
+            <aside className="editor-sidebar-left">
+                <LeftSidebar />
+            </aside>
+
+            {/* 中间：画布 (自适应宽度，滚动) */}
+            <main className="editor-canvas-area">
+                <div className="canvas-wrapper">
+                    <Canvas />
+                </div>
+            </main>
+
+            {/* 右侧：配置面板 (固定宽度) */}
+            <aside className="editor-sidebar-right">
                 <ConfigPanel />
-            </div>
+            </aside>
         </div>
     </div>
   );

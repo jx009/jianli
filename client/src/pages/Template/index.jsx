@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Card, Row, Col } from 'antd';
+import { Button, Row, Col } from 'antd';
 import { Link } from 'react-router-dom';
 
 const templates = [
@@ -13,38 +13,29 @@ const templates = [
 
 const Template = () => {
   return (
-    <div style={{ padding: '40px 20px', maxWidth: 1200, margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: 40, fontSize: 28 }}>简历模板大全</h2>
-      <Row gutter={[24, 24]}>
-        {templates.map(tpl => (
-          <Col key={tpl.id} xs={24} sm={12} md={8} lg={6}>
-            <div className="template-card" style={{ position: 'relative', overflow: 'hidden', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'pointer', transition: 'all 0.3s' }}>
-                <div style={{ position: 'relative', paddingTop: '141%' }}>
-                    <img 
-                        src={tpl.cover} 
-                        alt={tpl.title} 
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                    <div className="overlay" style={{
-                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                        background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: 0, transition: 'opacity 0.3s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                    onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                    >
-                        <Link to={`/editor/${tpl.id}`}>
-                            <Button type="primary" shape="round" style={{ background: '#24be58', borderColor: '#24be58' }}>使用模板</Button>
-                        </Link>
+    <div className="p__templateCenter___3P-2F">
+      <div className="p__templateCenter___2sJ1o">
+        <div className="p__templateCenter___3q1_1">简历模板大全</div>
+        <div className="p__templateCenter___1_1_1">
+          <Row gutter={[24, 24]}>
+            {templates.map(tpl => (
+              <Col key={tpl.id} xs={24} sm={12} md={8} lg={6}>
+                <div className="p__templateCenter___2_1_1">
+                  <div className="p__templateCenter___2_1_2">
+                    <img src={tpl.cover} alt={tpl.title} />
+                    <div className="p__templateCenter___2_1_3">
+                      <Link to={`/editor/${tpl.id}`}>
+                        <Button type="primary" shape="round" style={{ background: '#24be58', borderColor: '#24be58' }}>使用模板</Button>
+                      </Link>
                     </div>
+                  </div>
+                  <div className="p__templateCenter___2_1_4">{tpl.title}</div>
                 </div>
-                <div style={{ padding: 12, textAlign: 'center', background: '#fff' }}>
-                    <div style={{ fontSize: 14, color: '#333' }}>{tpl.title}</div>
-                </div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      </div>
     </div>
   );
 };
