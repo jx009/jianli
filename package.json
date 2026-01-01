@@ -1,10 +1,13 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "jianli",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "uuid": "^13.0.0"
+  }
 }
