@@ -8,6 +8,7 @@
   },
   "private": true,
   "dependencies": {
+    "react-contenteditable": "^3.3.7",
     "uuid": "^13.0.0"
   }
 }
