@@ -205,10 +205,6 @@ const Home = () => {
                 </div>
             </div>
         </section>
-        
-        <footer style={{ textAlign: 'center', padding: '40px', color: '#999', background: '#fafafa' }}>
-            © 2026 灵感简历 | 专为求职者打造
-        </footer>
     </>
   );
 
