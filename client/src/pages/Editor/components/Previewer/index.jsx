@@ -1,4 +1,5 @@
 import React from 'react';
+// FIXED PATH
 import useResumeStore from '../../../../store/useResumeStore';
 import { TEMPLATES } from '../../../../templates';
 

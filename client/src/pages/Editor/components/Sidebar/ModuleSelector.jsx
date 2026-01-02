@@ -12,6 +12,8 @@ import {
   GlobalOutlined,
   CheckCircleFilled
 } from '@ant-design/icons';
+
+// FIXED PATH
 import useResumeStore from '../../../../store/useResumeStore';
 
 // --- Icon Helpers ---

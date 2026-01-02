@@ -29,7 +29,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import axios from 'axios';
 
-import useResumeStore from '../../../store/useResumeStore';
+// FIXED PATH: 4 levels up to src, then store
+import useResumeStore from '../../../../store/useResumeStore';
 
 const { TextArea } = Input;
 const { Panel } = Collapse;
