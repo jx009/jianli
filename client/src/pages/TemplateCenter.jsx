@@ -60,7 +60,7 @@ const TemplatePreview = ({ type }) => {
     );
 };
 
-import { DEFAULT_MODULES, DEFAULT_CONFIG } from '../../store/useResumeStore';
+import { DEFAULT_MODULES, DEFAULT_CONFIG } from '../store/useResumeStore';
 
 const TemplateCenter = () => {
   const navigate = useNavigate();
