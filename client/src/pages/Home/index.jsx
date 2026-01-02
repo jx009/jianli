@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Layout, Dropdown, Avatar, Modal, Spin, message, Empty } from 'antd';
 import { 
   FileTextOutlined, 
   UserOutlined, 
@@ -14,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Button, Layout, Dropdown, Avatar, Modal, Spin, message, Empty, Upload } from 'antd'; // Add Upload here
+import { Button, Layout, Dropdown, Avatar, Modal, Spin, message, Empty, Upload } from 'antd'; 
 import './Home.css';
 
 const Home = () => {
