@@ -1,5 +1,5 @@
 import express from 'express';
-import { prisma } from '../index.js';
+import { PrismaClient } from '@prisma/client';
 import authRoutes from './auth.js';
 import resumeRoutes from './resume.js';
 import uploadRoutes from './upload.js';
@@ -12,11 +12,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const prisma = new PrismaClient();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 
 app.use(cors());
 app.use(express.json());

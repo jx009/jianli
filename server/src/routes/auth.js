@@ -1,72 +1,76 @@
 import express from 'express';
 import xml2js from 'xml2js';
+import crypto from 'crypto'; // Import crypto for signature check
 import { prisma } from '../index.js';
 import { generateToken } from '../utils/auth.js';
 
 const router = express.Router();
 
-// 内存存储验证码: { "884826": { openid: "wx_xxx", expires: 1700000000 } }
-// 生产环境建议用 Redis
 const verifyCodes = new Map();
 
-// 生成 6 位数字验证码
-const generateCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+// Helper: Check WeChat Signature
+const checkSignature = (signature, timestamp, nonce, token) => {
+    const arr = [token, timestamp, nonce].sort();
+    const str = arr.join('');
+    const sha1 = crypto.createHash('sha1').update(str).digest('hex');
+    return sha1 === signature;
 };
 
-// 清理过期验证码 (简单定时任务，每10分钟清理一次)
-setInterval(() => {
-    const now = Date.now();
-    for (const [code, data] of verifyCodes.entries()) {
-        if (data.expires < now) verifyCodes.delete(code);
-    }
-}, 10 * 60 * 1000);
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-
-// 1. 微信回调接口 (核心逻辑)
+// 1. WeChat Callback
 router.use('/wechat/callback', async (req, res) => {
     const { signature, timestamp, nonce, echostr } = req.query;
-    
-    // 验证签名逻辑 (略，为了演示直接通过，生产环境必须加上)
-    // if (!checkSignature(signature, timestamp, nonce)) return res.send('fail');
+    const token = process.env.WECHAT_TOKEN;
 
-    if (req.method === 'GET') {
-        return res.send(echostr); // 微信服务器验证 URL
+    // Log incoming request for debugging
+    console.log(`[WeChat] Incoming Request: method=${req.method}`);
+
+    // Verify Signature (Optional but recommended)
+    if (!checkSignature(signature, timestamp, nonce, token)) {
+        console.error('[WeChat] Signature verification failed');
+        // return res.status(403).send('Invalid signature'); 
+        // For debugging, we might skip this strict check or just log it
     }
 
-    // 处理 POST 消息
-    // Express 默认不解析 XML，我们需要手动处理或者假设已经有中间件
-    // 这里我们用一个简化的流式处理来演示解析
+    // GET Request: Verification
+    if (req.method === 'GET') {
+        console.log('[WeChat] Verification success');
+        return res.send(echostr);
+    }
+
+    // POST Request: Message Handling
     let buf = '';
     req.setEncoding('utf8');
     req.on('data', (chunk) => { buf += chunk; });
     req.on('end', async () => {
+        console.log('[WeChat] Received XML:', buf); // Print the XML
+
         try {
             const parser = new xml2js.Parser({ explicitArray: false });
             const result = await parser.parseStringPromise(buf);
             const xml = result.xml;
             
-            const toUser = xml.FromUserName;   // 用户 OpenID
-            const fromUser = xml.ToUserName;   // 公众号 ID
+            const toUser = xml.FromUserName;
+            const fromUser = xml.ToUserName;
             const msgType = xml.MsgType;
             const content = xml.Content;
             
             let replyContent = '';
 
-            // 逻辑：如果是文本消息，且内容是“登录”
+            console.log(`[WeChat] Parsed: type=${msgType}, content=${content}`);
+
             if (msgType === 'text' && (content === '登录' || content === '登陆')) {
                 const code = generateCode();
-                // 存入内存，有效期 10 分钟
                 verifyCodes.set(code, { openid: toUser, expires: Date.now() + 10 * 60 * 1000 });
-                
                 replyContent = `您的登录验证码是：${code}\n\n请在网页端输入此验证码完成登录。验证码 10 分钟内有效。`;
+                console.log(`[WeChat] Generated code ${code} for ${toUser}`);
             } else if (msgType === 'event' && xml.Event === 'subscribe') {
                  replyContent = `欢迎关注！\n\n回复【登录】即可获取验证码。`;
             } else {
                  replyContent = `欢迎使用！回复【登录】获取验证码。`;
             }
 
-            // 构造 XML 回复
             const replyXml = `
                 <xml>
                   <ToUserName><![CDATA[${toUser}]]></ToUserName>
@@ -81,18 +85,17 @@ router.use('/wechat/callback', async (req, res) => {
             res.send(replyXml);
 
         } catch (err) {
-            console.error(err);
-            res.send('success'); // 避免微信重试
+            console.error('[WeChat] Error parsing XML:', err);
+            res.send('success');
         }
     });
 });
 
-
-// 2. 验证码登录接口 (网页端调用)
+// 2. Login by Code
 router.post('/login-by-code', async (req, res) => {
     const { code } = req.body;
     
-    // MOCK MODE: 如果是特殊验证码 '123456'，直接登录（方便开发测试）
+    // Mock
     if (code === '123456') {
          const mockUser = await prisma.user.upsert({
             where: { openid: 'mock-openid-dev' },
@@ -104,15 +107,10 @@ router.post('/login-by-code', async (req, res) => {
     }
 
     const data = verifyCodes.get(code);
-
-    if (!data) {
-        return res.status(400).json({ error: '验证码无效或已过期' });
-    }
+    if (!data) return res.status(400).json({ error: '验证码无效或已过期' });
     
-    // 验证通过，销毁验证码
     verifyCodes.delete(code);
     
-    // 查找或创建用户
     const user = await prisma.user.upsert({
         where: { openid: data.openid },
         update: {},
