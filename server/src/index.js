@@ -1,9 +1,9 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import authRoutes from './auth.js';
-import resumeRoutes from './resume.js';
-import uploadRoutes from './upload.js';
-import aiRoutes from './ai.js';
+import authRoutes from './routes/auth.js';
+import resumeRoutes from './routes/resume.js';
+import uploadRoutes from './routes/upload.js';
+import aiRoutes from './routes/ai.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
