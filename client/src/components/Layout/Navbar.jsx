@@ -1,32 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Dropdown, Avatar, Modal, Spin, message } from 'antd';
+import { Button, Dropdown, Avatar, Modal, Spin, message, Input } from 'antd';
 import { 
   FileTextOutlined, 
   UserOutlined, 
   LogoutOutlined,
   AppstoreOutlined,
-  HomeOutlined
+  HomeOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+
+// Placeholder for your official account QR code
+// You should replace this with your actual image path like '/static/wechat-qr.jpg'
+const MOCK_QR_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://u.wechat.com/YOUR_OFFICIAL_ACCOUNT_URL'; 
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  
+  // Login States
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [sceneId, setSceneId] = useState('');
-  const [isPolling, setIsPolling] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
 
   // Load User
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
     
-    // Listen to login events from other components if any (optional enhancement)
     const handleStorageChange = () => {
          const updatedUser = localStorage.getItem('user');
          if (updatedUser) setUser(JSON.parse(updatedUser));
@@ -36,39 +39,34 @@ const Navbar = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Login Logic (Shared)
-  useEffect(() => {
-    let interval;
-    if (isLoginModalOpen && sceneId && isPolling) {
-        interval = setInterval(async () => {
-            try {
-                const res = await axios.get(`/api/auth/check?sceneId=${sceneId}`);
-                if (res.data.status === 'confirmed') {
-                    message.success('登录成功');
-                    localStorage.setItem('token', res.data.token);
-                    localStorage.setItem('user', JSON.stringify(res.data.user));
-                    setUser(res.data.user);
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-                    setIsPolling(false);
-                    setIsLoginModalOpen(false);
-                    // Refresh page or state
-                    window.dispatchEvent(new Event('storage'));
-                }
-            } catch (error) {}
-        }, 2000);
-    }
-    return () => clearInterval(interval);
-  }, [isLoginModalOpen, sceneId, isPolling]);
-
-  const handleLoginClick = async () => {
+  const handleLoginClick = () => {
       setIsLoginModalOpen(true);
-      setQrCodeUrl(''); 
+      setVerifyCode('');
+  };
+
+  const handleSubmitCode = async () => {
+      if (!verifyCode) {
+          message.warning('请输入验证码');
+          return;
+      }
+      setLoggingIn(true);
       try {
-          const res = await axios.get('/api/auth/wechat/qrcode');
-          setQrCodeUrl(res.data.url);
-          setSceneId(res.data.sceneId);
-          setIsPolling(true);
-      } catch (error) { message.error('获取登录二维码失败'); }
+          const res = await axios.post('/api/auth/login-by-code', { code: verifyCode });
+          
+          message.success('登录成功');
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          setUser(res.data.user);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+          
+          setIsLoginModalOpen(false);
+          // Trigger updates
+          window.dispatchEvent(new Event('storage'));
+      } catch (error) {
+          message.error(error.response?.data?.error || '登录失败，��检查验证码');
+      } finally {
+          setLoggingIn(false);
+      }
   };
 
   const handleLogout = () => {
@@ -114,7 +112,7 @@ const Navbar = () => {
                     <div style={{ width: 40, height: 40, background: '#24be58', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24 }}>
                         <FileTextOutlined />
                     </div>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: '#333', letterSpacing: '-0.5px' }}>职达简历</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: '#333', letterSpacing: '-0.5px' }}>灵感简历</span>
                 </Link>
 
                 <nav style={{ marginLeft: 60, display: 'flex' }}>
@@ -154,21 +152,52 @@ const Navbar = () => {
         </header>
 
         <Modal 
-            title="微信扫码登录" 
+            title="关注公众号登录" 
             open={isLoginModalOpen} 
             onCancel={() => setIsLoginModalOpen(false)}
             footer={null}
-            width={360}
+            width={380}
             centered
         >
-             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                {qrCodeUrl ? (
-                    <>
-                        <img src={qrCodeUrl} alt="QR" style={{ width: 200, height: 200, marginBottom: 16 }} />
-                        <p style={{ color: '#999' }}>微信扫一扫，一键登录</p>
-                        <div style={{ marginTop: 20, fontSize: 12, color: '#ddd' }}>(开发模式: 2秒后自动登录)</div>
-                    </>
-                ) : <Spin tip="加载中..." />}
+             <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                 {/* QR Code Section */}
+                 <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
+                     {/* Replace src below with your actual Official Account QR Image */}
+                    <img src="/static/wechat_qr.jpg" alt="WeChat QR" style={{ width: 180, height: 180 }} />
+                 </div>
+                 
+                 <p style={{ color: '#666', fontSize: 14, marginBottom: 24 }}>
+                     请扫码关注公众号<br/>
+                     回复 <span style={{ color: '#24be58', fontWeight: 'bold' }}>登录</span> 获取验证码
+                 </p>
+
+                 {/* Code Input Section */}
+                 <div style={{ display: 'flex', gap: 10 }}>
+                     <Input 
+                        prefix={<SafetyCertificateOutlined style={{color:'#999'}} />}
+                        placeholder="请输入6位验证码" 
+                        size="large" 
+                        value={verifyCode}
+                        onChange={e => setVerifyCode(e.target.value)}
+                        onPressEnter={handleSubmitCode}
+                        maxLength={6}
+                        style={{ textAlign: 'center', letterSpacing: 2 }}
+                     />
+                     <Button 
+                        type="primary" 
+                        size="large" 
+                        onClick={handleSubmitCode} 
+                        loading={loggingIn}
+                        style={{ background: '#24be58', borderColor: '#24be58', minWidth: 100 }}
+                     >
+                        登录
+                     </Button>
+                 </div>
+                 
+                 {/* DEV Hint */}
+                 <div style={{ marginTop: 20, fontSize: 12, color: '#ddd' }}>
+                     (开发测试: 输入 123456 直接登录)
+                 </div>
             </div>
         </Modal>
     </>

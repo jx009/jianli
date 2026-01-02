@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button, Input, message, Spin, Avatar, Modal } from 'antd';
+import { Button, Input, message, Spin, Avatar, Modal, Tooltip, Divider } from 'antd';
 import { 
   SaveOutlined, 
   DownloadOutlined, 
   FileTextOutlined,
   UserOutlined,
   CloudSyncOutlined,
-  WechatOutlined
+  LeftOutlined,
+  HomeOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import useResumeStore from '../../store/useResumeStore';
@@ -33,13 +35,12 @@ const Editor = () => {
   const [user, setUser] = useState(null);
   const [resumeTitle, setResumeTitle] = useState('我的求职简历');
   
-  // Login Modal States
+  // Login Modal States (Simplified for Code Login)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [sceneId, setSceneId] = useState('');
-  const [isPolling, setIsPolling] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
 
-  // Check Auth & Load Resume (Same as before)
+  // Check Auth & Load Resume
   useEffect(() => {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
@@ -59,38 +60,28 @@ const Editor = () => {
       }
   }, [id]);
 
-  // Login Polling (Same as before)
-  useEffect(() => {
-      let interval;
-      if (isLoginModalOpen && sceneId && isPolling) {
-          interval = setInterval(async () => {
-              try {
-                  const res = await axios.get(`/api/auth/check?sceneId=${sceneId}`);
-                  if (res.data.status === 'confirmed') {
-                      message.success('登录成功');
-                      localStorage.setItem('token', res.data.token);
-                      localStorage.setItem('user', JSON.stringify(res.data.user));
-                      setUser(res.data.user);
-                      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-                      setIsPolling(false);
-                      setIsLoginModalOpen(false);
-                  }
-              } catch (error) {}
-          }, 2000);
-      }
-      return () => clearInterval(interval);
-  }, [isLoginModalOpen, sceneId, isPolling]);
-
   // Handlers
-  const handleLoginClick = async () => {
+  const handleLoginClick = () => {
       setIsLoginModalOpen(true);
-      setQrCodeUrl(''); 
+      setVerifyCode('');
+  };
+
+  const handleSubmitCode = async () => {
+      if (!verifyCode) { message.warning('请输入验证码'); return; }
+      setLoggingIn(true);
       try {
-          const res = await axios.get('/api/auth/wechat/qrcode');
-          setQrCodeUrl(res.data.url);
-          setSceneId(res.data.sceneId);
-          setIsPolling(true);
-      } catch (error) { message.error('获取登录二维码失败'); }
+          const res = await axios.post('/api/auth/login-by-code', { code: verifyCode });
+          message.success('登录成功');
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          setUser(res.data.user);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+          setIsLoginModalOpen(false);
+      } catch (error) {
+          message.error(error.response?.data?.error || '登录失败');
+      } finally {
+          setLoggingIn(false);
+      }
   };
 
   const handleLogout = () => {
@@ -121,57 +112,31 @@ const Editor = () => {
     } catch (error) { setSaving(false); message.error('保存失败'); }
   };
 
-  // PDF Export Logic
   const handleDownload = async () => {
       setExporting(true);
-      const element = document.querySelector('.a4-paper'); // Select the resume container
-      if (!element) {
-          message.error('无法找到简历内容');
-          setExporting(false);
-          return;
-      }
-
+      const element = document.querySelector('.a4-paper');
+      if (!element) { message.error('无法找到简历内容'); setExporting(false); return; }
       try {
-          // 1. html2canvas to PNG
-          const canvas = await html2canvas(element, {
-              scale: 2, // Improve resolution
-              useCORS: true, // Handle external images (like user avatar)
-              logging: false,
-              backgroundColor: '#ffffff'
-          });
+          const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
           const imgData = canvas.toDataURL('image/png');
-
-          // 2. jsPDF to PDF
           const pdf = new jsPDF('p', 'mm', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
           const imgProps = pdf.getImageProperties(imgData);
-          
-          // Calculate height based on A4 width
           const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-          
           let heightLeft = imgHeight;
           let position = 0;
-
-          // Multi-page logic
           pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
           heightLeft -= pdfHeight;
-
           while (heightLeft >= 0) {
               position = heightLeft - imgHeight;
               pdf.addPage();
               pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
               heightLeft -= pdfHeight;
           }
-
           pdf.save(`${resumeTitle || 'resume'}.pdf`);
           message.success('导出成功');
-      } catch (error) {
-          console.error(error);
-          message.error('导出失败，请重试');
-      } finally {
-          setExporting(false);
-      }
+      } catch (error) { console.error(error); message.error('导出失败，请重试'); } finally { setExporting(false); }
   };
 
   if (loading) return <div className="loading-screen"><Spin size="large" tip="正在加载简历..." /></div>;
@@ -180,40 +145,33 @@ const Editor = () => {
     <div className="editor-layout">
         <header className="editor-header">
             <div className="header-left">
-                <Link to="/" className="brand-logo" style={{ textDecoration: 'none' }}>
+                <Tooltip title="返回首页">
+                    <Button type="text" icon={<LeftOutlined />} onClick={() => navigate('/')} style={{ marginRight: 8, color: '#666' }}/>
+                </Tooltip>
+                <div className="brand-logo" onClick={() => navigate('/')}>
                     <FileTextOutlined className="logo-icon" />
-                    <span>职达简历</span>
-                </Link>
+                    <span>灵感简历</span>
+                </div>
                 <div style={{ width: 1, height: 20, background: '#eee', margin: '0 16px' }} />
                 <div className="resume-title-edit">
-                    <Input 
-                        bordered={false} 
-                        value={resumeTitle} 
-                        onChange={e => setResumeTitle(e.target.value)}
-                        style={{ width: 200, fontWeight: 500 }}
-                    />
-                    {saving ? <span style={{fontSize: 12, color: '#999'}}><CloudSyncOutlined spin /> 保存中...</span> : <span style={{fontSize: 12, color: '#ccc'}}>已保存</span>}
+                    <Input bordered={false} value={resumeTitle} onChange={e => setResumeTitle(e.target.value)} style={{ width: 240, fontWeight: 500, fontSize: 15 }} placeholder="请输入简历标题"/>
+                    {saving ? <span style={{fontSize: 12, color: '#999'}}><CloudSyncOutlined spin /></span> : <span style={{fontSize: 12, color: '#ccc'}}>已保存</span>}
                 </div>
             </div>
+
             <div className="header-right">
-                <Button icon={<SaveOutlined />} onClick={handleSave} type="text">保存</Button>
-                <Button 
-                    type="primary" 
-                    icon={exporting ? <LoadingOutlined /> : <DownloadOutlined />} 
-                    onClick={handleDownload} 
-                    disabled={exporting}
-                    style={{ marginLeft: 12, background: '#24be58', borderColor: '#24be58' }}
-                >
+                <Button icon={<SaveOutlined />} onClick={handleSave} type="text" style={{marginRight: 8}}>保存</Button>
+                <Button type="primary" icon={exporting ? <Spin size="small" /> : <DownloadOutlined />} onClick={handleDownload} disabled={exporting} style={{ background: '#24be58', borderColor: '#24be58', borderRadius: 6, fontWeight: 500 }}>
                     {exporting ? '生成中...' : '导出 PDF'}
                 </Button>
                 <div style={{ marginLeft: 24, cursor: 'pointer' }}>
                    {user ? (
                        <div onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                           <Avatar icon={<UserOutlined />} src={user.avatar} style={{ backgroundColor: '#87d068' }} />
+                           <Avatar icon={<UserOutlined />} src={user.avatar} style={{ backgroundColor: '#24be58' }} size="small" />
                            <span style={{ fontSize: 13, color: '#666' }}>{user.nickname}</span>
                        </div>
                    ) : (
-                       <Button type="link" onClick={handleLoginClick} style={{ color: '#666' }}>登录 / 注册</Button>
+                       <Button type="link" onClick={handleLoginClick} style={{ color: '#666' }}>登录</Button>
                    )}
                 </div>
             </div>
@@ -226,25 +184,39 @@ const Editor = () => {
         </div>
 
         <Modal 
-            title="微信扫码登录" 
+            title="关注公众号登录" 
             open={isLoginModalOpen} 
             onCancel={() => setIsLoginModalOpen(false)}
             footer={null}
-            width={360}
+            width={380}
             centered
         >
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                {qrCodeUrl ? (
-                    <>
-                        <div style={{ marginBottom: 16 }}>
-                            <img src={qrCodeUrl} alt="WeChat QR" style={{ width: 200, height: 200 }} />
-                        </div>
-                        <p style={{ color: '#999', fontSize: 13 }}>
-                            请使用微信扫描二维码<br/>关注公众号自动登录
-                        </p>
-                        <div style={{ marginTop: 20, fontSize: 12, color: '#ddd' }}>(开发模式: 2秒后自动登录)</div>
-                    </>
-                ) : ( <Spin tip="正在获取二维码..." /> )}
+             <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                 <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
+                    {/* Placeholder for QR Code */}
+                    <img src="/static/wechat_qr.jpg" alt="WeChat QR" style={{ width: 180, height: 180 }} />
+                 </div>
+                 
+                 <p style={{ color: '#666', fontSize: 14, marginBottom: 24 }}>
+                     请扫码关注公众号<br/>
+                     回复 <span style={{ color: '#24be58', fontWeight: 'bold' }}>登录</span> 获取验证码
+                 </p>
+
+                 <div style={{ display: 'flex', gap: 10 }}>
+                     <Input 
+                        prefix={<SafetyCertificateOutlined style={{color:'#999'}} />}
+                        placeholder="请输入验证码" 
+                        size="large" 
+                        value={verifyCode}
+                        onChange={e => setVerifyCode(e.target.value)}
+                        onPressEnter={handleSubmitCode}
+                        maxLength={6}
+                        style={{ textAlign: 'center', letterSpacing: 2 }}
+                     />
+                     <Button type="primary" size="large" onClick={handleSubmitCode} loading={loggingIn} style={{ background: '#24be58', borderColor: '#24be58', minWidth: 100 }}>登录</Button>
+                 </div>
+                 
+                 <div style={{ marginTop: 20, fontSize: 12, color: '#ddd' }}>(开发测试: 输入 123456 直接登录)</div>
             </div>
         </Modal>
     </div>

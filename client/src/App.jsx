@@ -13,7 +13,7 @@ const MainLayout = () => (
       <Outlet />
     </div>
     <footer style={{ textAlign: 'center', padding: '40px', color: '#999', background: '#fafafa', borderTop: '1px solid #eee' }}>
-        © 2026 职达简历 | 助你轻松斩获 Offer
+        © 2026 灵感简历 | 助你轻松斩获 Offer
     </footer>
   </div>
 );
