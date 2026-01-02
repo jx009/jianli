@@ -167,9 +167,9 @@ const Editor = () => {
                 <Tooltip title="返回首页">
                     <Button type="text" icon={<LeftOutlined />} onClick={() => navigate('/')} style={{ marginRight: 8, color: '#666' }}/>
                 </Tooltip>
-                <div className="brand-logo" onClick={() => navigate('/')}>
-                    <FileTextOutlined className="logo-icon" />
-                    <span>灵感简历</span>
+                <div className="brand-logo" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <img src="/static/logo.png" alt="Logo" style={{ width: 28, height: 28, borderRadius: 6 }} />
+                    <span style={{ fontSize: 18, fontWeight: 700, color: '#333' }}>灵感简历</span>
                 </div>
                 <div style={{ width: 1, height: 20, background: '#eee', margin: '0 16px' }} />
                 <div className="resume-title-edit">
