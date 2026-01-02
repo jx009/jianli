@@ -68,8 +68,9 @@ const LeftRightTemplate = ({ resume }) => {
     itemDesc: { fontSize: 13.5, color: '#555', whiteSpace: 'pre-line', textAlign: 'justify' },
   };
 
-  const baseInfoModule = modules.find(m => m.type === 'baseInfo');
-  const otherModules = modules.filter(m => m.type !== 'baseInfo');
+  const safeModules = modules || [];
+  const baseInfoModule = safeModules.find(m => m.type === 'baseInfo');
+  const otherModules = safeModules.filter(m => m.type !== 'baseInfo');
 
   return (
     <div style={styles.page}>

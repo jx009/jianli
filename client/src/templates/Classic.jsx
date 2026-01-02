@@ -80,7 +80,7 @@ const ClassicTemplate = ({ resume }) => {
 
   return (
     <div style={styles.page}>
-        {modules.map(module => (
+        {(modules || []).map(module => (
             <React.Fragment key={module.id}>
                 {module.type === 'baseInfo' && renderBaseInfo(module.data)}
                 {module.type === 'list' && renderList(module)}

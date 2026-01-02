@@ -36,8 +36,8 @@ const Canvas = () => {
         '--theme-color': resume.config.themeColor
     }}>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={resume.modules} strategy={verticalListSortingStrategy}>
-          {resume.modules.map((module) => (
+        <SortableContext items={resume.modules || []} strategy={verticalListSortingStrategy}>
+          {(resume.modules || []).map((module) => (
             <ModuleRenderer key={module.id} module={module} />
           ))}
         </SortableContext>

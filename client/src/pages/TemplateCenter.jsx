@@ -60,6 +60,8 @@ const TemplatePreview = ({ type }) => {
     );
 };
 
+import { DEFAULT_MODULES, DEFAULT_CONFIG } from '../../store/useResumeStore';
+
 const TemplateCenter = () => {
   const navigate = useNavigate();
 
@@ -69,13 +71,18 @@ const TemplateCenter = () => {
     if (!token) {
         // Create a temporary "new" resume for non-logged in users (or redirect to login)
         // For better UX, let's create a draft
+        navigate(`/editor/new?template=${templateId}`);
+        return;
     }
     
     try {
         // Create resume with specific template
         const res = await axios.post('/api/resumes', { 
             title: '我的简历', 
-            content: { config: { templateId } } // Pre-set the template
+            content: { 
+              config: { ...DEFAULT_CONFIG, templateId },
+              modules: DEFAULT_MODULES
+            }
         });
         navigate(`/editor/${res.data.id}`);
     } catch (error) {

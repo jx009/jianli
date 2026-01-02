@@ -225,7 +225,7 @@ const SortableItem = ({ module, index }) => {
 
 const FormBuilder = () => {
   const { resume, reorderModules } = useResumeStore();
-  const { modules } = resume;
+  const modules = resume.modules || [];
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   const handleDragEnd = (event) => {

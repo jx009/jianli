@@ -50,7 +50,7 @@ const MinimalTemplate = ({ resume }) => {
 
   return (
     <div style={styles.page}>
-        {modules.map(module => (
+        {(modules || []).map(module => (
             <div key={module.id} style={styles.section}>
                 {module.type === 'baseInfo' ? renderBaseInfo(module.data) : (
                     <>

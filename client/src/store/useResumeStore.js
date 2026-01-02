@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
-const DEFAULT_MODULES = [
+export const DEFAULT_MODULES = [
   {
     id: 'base-info',
     type: 'baseInfo',
@@ -50,15 +50,17 @@ const DEFAULT_MODULES = [
   }
 ];
 
+export const DEFAULT_CONFIG = {
+  themeColor: '#24be58',
+  fontFamily: 'sans-serif',
+  lineHeight: 1.5,
+  paperSize: 'A4',
+  moduleMargin: 24
+};
+
 const useResumeStore = create((set) => ({
   resume: {
-    config: {
-      themeColor: '#24be58',
-      fontFamily: 'sans-serif',
-      lineHeight: 1.5,
-      paperSize: 'A4',
-      moduleMargin: 24
-    },
+    config: DEFAULT_CONFIG,
     modules: DEFAULT_MODULES
   },
 
