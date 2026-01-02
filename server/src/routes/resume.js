@@ -2,7 +2,40 @@ import express from 'express';
 import { prisma } from '../index.js';
 import { authMiddleware } from '../utils/auth.js';
 
+import multer from 'multer';
+import { parseResumePdf } from '../services/importService.js';
+
+// Multer setup for memory storage
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
 const router = express.Router();
+
+// 0. 导入简历 (PDF Import)
+router.post('/import', authMiddleware, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        
+        const parsedContent = await parseResumePdf(req.file.buffer);
+        
+        // Create a new resume record immediately
+        const newResume = await prisma.resume.create({
+            data: {
+                title: '导入的简历',
+                content: parsedContent,
+                userId: req.userId,
+                thumbnail: null // Placeholder
+            }
+        });
+
+        res.json(newResume);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to import resume' });
+    }
+});
 
 // 1. 获取我的简历列表 (Dashboard)
 router.get('/', authMiddleware, async (req, res) => {

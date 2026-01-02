@@ -9,10 +9,12 @@ import {
   PlusOutlined,
   LogoutOutlined,
   DeleteOutlined,
-  EditOutlined
+  EditOutlined,
+  UploadOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Button, Layout, Dropdown, Avatar, Modal, Spin, message, Empty, Upload } from 'antd'; // Add Upload here
 import './Home.css';
 
 const Home = () => {
@@ -20,6 +22,7 @@ const Home = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resumes, setResumes] = useState([]);
+  const [importing, setImporting] = useState(false); // Import state
   
   // Auth Modal States (Borrowed from Editor logic)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -110,6 +113,36 @@ const Home = () => {
     }
   };
 
+  const handleImport = async (file) => {
+      if (!user) {
+          handleLoginClick();
+          return false;
+      }
+      
+      const isPdf = file.type === 'application/pdf';
+      if (!isPdf) {
+          message.error('只支持 PDF 文件');
+          return Upload.LIST_IGNORE;
+      }
+
+      setImporting(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+          const res = await axios.post('/api/resumes/import', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          message.success('导入成功');
+          navigate(`/editor/${res.data.id}`);
+      } catch (error) {
+          message.error('导入失败，请重试');
+      } finally {
+          setImporting(false);
+      }
+      return false; // Prevent auto upload by antd, we handled it manually
+  };
+
   const handleDelete = async (e, id) => {
       e.stopPropagation();
       Modal.confirm({
@@ -137,6 +170,7 @@ const Home = () => {
 
   const Navbar = () => (
     <header className="site-header">
+
         <div className="site-logo">
             <FileTextOutlined style={{ color: '#24be58', fontSize: 28 }} />
             <span>职达简历</span>
@@ -212,7 +246,12 @@ const Home = () => {
     <div className="dashboard-container">
         <div className="dashboard-header">
             <h2 style={{ margin: 0 }}>我的简历</h2>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={{ background: '#24be58', borderColor: '#24be58' }}>新建简历</Button>
+            <div style={{ display: 'flex', gap: 12 }}>
+                <Upload beforeUpload={handleImport} showUploadList={false} accept=".pdf">
+                    <Button icon={importing ? <Spin size="small" /> : <UploadOutlined />}>导入简历</Button>
+                </Upload>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={{ background: '#24be58', borderColor: '#24be58' }}>新建简历</Button>
+            </div>
         </div>
 
         {loading ? <div style={{textAlign:'center', padding: 50}}><Spin /></div> : (
