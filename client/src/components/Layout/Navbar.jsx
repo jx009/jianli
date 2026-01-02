@@ -109,9 +109,7 @@ const Navbar = () => {
         <header style={navStyle}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
                 <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 40, height: 40, background: '#24be58', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24 }}>
-                        <FileTextOutlined />
-                    </div>
+                    <img src="/static/logo.png" alt="Logo" style={{ width: 40, height: 40, borderRadius: 10 }} />
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#333', letterSpacing: '-0.5px' }}>灵感简历</span>
                 </Link>
 

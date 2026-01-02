@@ -99,12 +99,31 @@ const Editor = () => {
         return;
     }
     setSaving(true);
+
+    // Generate Thumbnail
+    let thumbnail = null;
     try {
+        const element = document.querySelector('.a4-paper');
+        if (element) {
+            const canvas = await html2canvas(element, { 
+                scale: 0.3, 
+                useCORS: true, 
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            thumbnail = canvas.toDataURL('image/jpeg', 0.6);
+        }
+    } catch (e) {
+        console.error('Thumbnail generation failed', e);
+    }
+
+    try {
+        const payload = { title: resumeTitle, content: resume, thumbnail };
         if (id && id !== 'new') {
-            await axios.put(`/api/resumes/${id}`, { title: resumeTitle, content: resume });
+            await axios.put(`/api/resumes/${id}`, payload);
             message.success('保存成功');
         } else {
-            const res = await axios.post('/api/resumes', { title: resumeTitle, content: resume });
+            const res = await axios.post('/api/resumes', payload);
             message.success('创建成功');
             navigate(`/editor/${res.data.id}`, { replace: true });
         }

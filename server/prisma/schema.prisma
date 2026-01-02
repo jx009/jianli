@@ -21,6 +21,7 @@ model Resume {
   id        Int      @id @default(autoincrement())
   title     String
   content   Json     // Stores the entire Redux/Zustand state
+  thumbnail String?  @db.LongText // Base64 thumbnail
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())

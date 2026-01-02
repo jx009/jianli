@@ -182,9 +182,7 @@ const Home = () => {
             
             {/* Mock UI Preview Image */}
             <div style={{ marginTop: 60, boxShadow: '0 20px 50px rgba(0,0,0,0.1)', borderRadius: 12, overflow: 'hidden', display: 'inline-block', maxWidth: '80%' }}>
-                 <div style={{ background: '#f0f2f5', height: 400, width: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>
-                     (产品界面预览图)
-                 </div>
+                 <img src="/static/editor-preview.png" alt="产品界面预览" style={{ width: '100%', height: 'auto', display: 'block' }} />
             </div>
         </section>
 
@@ -209,7 +207,7 @@ const Home = () => {
         </section>
         
         <footer style={{ textAlign: 'center', padding: '40px', color: '#999', background: '#fafafa' }}>
-            © 2026 职达简历 | 专为求职者打造
+            © 2026 灵感简历 | 专为求职者打造
         </footer>
     </>
   );
@@ -232,8 +230,12 @@ const Home = () => {
                 {/* Resume Cards */}
                 {resumes.map(resume => (
                     <div className="resume-card" key={resume.id} onClick={() => navigate(`/editor/${resume.id}`)}>
-                        <div className="resume-preview-placeholder">
-                            <FileTextOutlined style={{ opacity: 0.1 }} />
+                        <div className="resume-preview-placeholder" style={{ overflow: 'hidden', padding: 0, background: '#fff' }}>
+                            {resume.thumbnail ? (
+                                <img src={resume.thumbnail} alt="预览" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                            ) : (
+                                <FileTextOutlined style={{ opacity: 0.1, fontSize: 48 }} />
+                            )}
                         </div>
                         <div className="resume-info">
                             <div className="resume-title">{resume.title || '未命名简历'}</div>
@@ -250,7 +252,6 @@ const Home = () => {
 
   return (
     <div className="home-container">
-        <Navbar />
         {user ? <DashboardView /> : <LandingView />}
 
         {/* Login Modal */}

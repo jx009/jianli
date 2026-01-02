@@ -10,7 +10,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const resumes = await prisma.resume.findMany({
       where: { userId: req.userId },
       orderBy: { updatedAt: 'desc' },
-      select: { id: true, title: true, updatedAt: true } // Don't fetch heavy content
+      select: { id: true, title: true, updatedAt: true, thumbnail: true } // Don't fetch heavy content
     });
     res.json(resumes);
   } catch (error) {
@@ -39,12 +39,13 @@ router.get('/:id', async (req, res) => {
 // 如果 ID 存在则更新，不存在则创建
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        const { title, content } = req.body;
+        const { title, content, thumbnail } = req.body;
         
         const newResume = await prisma.resume.create({
             data: {
                 title: title || '未命名简历',
                 content: content, // Json
+                thumbnail,        // Save thumbnail
                 userId: req.userId
             }
         });
@@ -57,7 +58,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
 router.put('/:id', authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { title, content } = req.body;
+    const { title, content, thumbnail } = req.body;
     
     try {
         // Verify ownership
@@ -69,7 +70,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
             where: { id: parseInt(id) },
             data: {
                 title,
-                content
+                content,
+                thumbnail
             }
         });
         res.json(updated);
