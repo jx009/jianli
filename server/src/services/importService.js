@@ -1,11 +1,51 @@
 import pdf from 'pdf-parse';
+import { parseWithAI } from './aiParseService.js';
+import { v4 as uuidv4 } from 'uuid';
 
-export const parseResumePdf = async (buffer) => {
+export const parseResumePdf = async (buffer, options = {}) => {
     try {
+        const { mode = 'template', templateId = 'classic' } = options;
         const data = await pdf(buffer);
         const text = data.text;
+
+        // --- MODE A: Free Text (Word-like) ---
+        if (mode === 'free') {
+            return {
+                title: '导入的简历 (自由模式)',
+                content: {
+                    config: { templateId: 'free' },
+                    modules: [
+                        {
+                            id: 'free-text',
+                            type: 'richText',
+                            title: '自由编辑内容',
+                            data: { content: text } // Raw text as initial content
+                        }
+                    ]
+                },
+                rawText: text
+            };
+        }
+
+        // --- MODE B: Structured Template (Smart Fill) ---
         
-        // Basic Heuristics
+        // 1. Try AI Parsing first
+        console.log('Starting AI Parsing...');
+        let aiResult = await parseWithAI(text);
+        
+        if (aiResult && aiResult.modules) {
+            console.log('AI Parsing Successful');
+            // Override the AI's config with the user's selected template
+            aiResult.config = { ...aiResult.config, templateId: templateId };
+            return {
+                title: aiResult.modules.find(m => m.type === 'baseInfo')?.data?.name + '的简历' || '导入的简历',
+                content: aiResult
+            };
+        }
+
+        console.log('AI Parsing Failed or Skipped, falling back to heuristics.');
+
+        // 2. Fallback to Heuristics (Original Logic)
         const lines = text.split('\n').map(l => l.trim()).filter(l => l);
         
         // 1. Base Info
@@ -59,7 +99,7 @@ export const parseResumePdf = async (buffer) => {
                     // We'll group them loosely
                     if (sections[currentSection].length === 0 || sections[currentSection][sections[currentSection].length - 1].desc) {
                          sections[currentSection].push({ 
-                             id: Math.random().toString(36).substr(2, 9),
+                             id: uuidv4(),
                              title: line, // Assume first line of block is title
                              subtitle: '',
                              date: '',
@@ -81,7 +121,7 @@ export const parseResumePdf = async (buffer) => {
                 lineHeight: 1.5,
                 paperSize: 'A4',
                 moduleMargin: 24,
-                templateId: 'classic'
+                templateId: templateId // User selected template
             },
             modules: [
                 {
@@ -115,7 +155,10 @@ export const parseResumePdf = async (buffer) => {
             resumeData.modules.push({ id: 'skill', type: 'text', title: '专业技能', data: { content: sections.skill } });
         }
 
-        return resumeData;
+        return {
+            title: name + '的简历',
+            content: resumeData
+        };
 
     } catch (error) {
         console.error('PDF Parse Error:', error);

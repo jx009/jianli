@@ -10,7 +10,7 @@ import {
   HomeOutlined,
   SafetyCertificateOutlined
 } from '@ant-design/icons';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import useResumeStore from '../../store/useResumeStore';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
@@ -20,13 +20,15 @@ import jsPDF from 'jspdf';
 import ModuleSelector from './components/Sidebar/ModuleSelector';
 import FormBuilder from './components/FormBuilder';
 import Previewer from './components/Previewer';
+import FreeEditor from './FreeEditor';
 
 import './Editor.css';
 
 const Editor = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { resume, updateConfig } = useResumeStore();
+  const { resume, updateConfig, updateModuleData } = useResumeStore();
   
   // States
   const [loading, setLoading] = useState(false);
@@ -48,17 +50,22 @@ const Editor = () => {
           setUser(JSON.parse(savedUser));
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
+      
+      const mode = searchParams.get('mode');
+
       if (id && id !== 'new') {
           setLoading(true);
           axios.get(`/api/resumes/${id}`)
               .then(res => {
-                  if (res.data.content) useResumeStore.setState({ resume: res.data.content });
+                  if (res.data.content) {
+                      useResumeStore.setState({ resume: res.data.content });
+                  }
                   if (res.data.title) setResumeTitle(res.data.title);
                   setLoading(false);
               })
               .catch(err => { console.error(err); setLoading(false); });
       }
-  }, [id]);
+  }, [id, searchParams]);
 
   // Handlers
   const handleLoginClick = () => {
@@ -103,7 +110,7 @@ const Editor = () => {
     // Generate Thumbnail
     let thumbnail = null;
     try {
-        const element = document.querySelector('.a4-paper');
+        const element = document.querySelector('.a4-paper') || document.querySelector('.free-editor-container');
         if (element) {
             const canvas = await html2canvas(element, { 
                 scale: 0.3, 
@@ -133,7 +140,7 @@ const Editor = () => {
 
   const handleDownload = async () => {
       setExporting(true);
-      const element = document.querySelector('.a4-paper');
+      const element = document.querySelector('.a4-paper') || document.querySelector('.free-editor-container');
       if (!element) { message.error('无法找到简历内容'); setExporting(false); return; }
       try {
           const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
@@ -156,6 +163,16 @@ const Editor = () => {
           pdf.save(`${resumeTitle || 'resume'}.pdf`);
           message.success('导出成功');
       } catch (error) { console.error(error); message.error('导出失败，请重试'); } finally { setExporting(false); }
+  };
+
+  // --- FREE MODE LOGIC ---
+  const isFreeMode = resume?.config?.templateId === 'free';
+  const freeTextContent = isFreeMode && resume.modules[0]?.data?.content;
+
+  const handleFreeTextChange = (newHtml) => {
+      if (isFreeMode) {
+           updateModuleData('free-text', { content: newHtml });
+      }
   };
 
   if (loading) return <div className="loading-screen"><Spin size="large" tip="正在加载简历..." /></div>;
@@ -196,10 +213,16 @@ const Editor = () => {
             </div>
         </header>
 
-        <div className="editor-workspace">
-            <aside className="editor-sidebar-left"><ModuleSelector /></aside>
-            <div className="editor-form-area"><div className="form-container"><FormBuilder /></div></div>
-            <div className="editor-preview-area"><div className="a4-paper"><Previewer /></div></div>
+        <div className="editor-workspace" style={isFreeMode ? { display: 'block', padding: 40, background: '#f0f2f5', overflowY: 'auto' } : {}}>
+            {isFreeMode ? (
+                <FreeEditor initialContent={freeTextContent} onChange={handleFreeTextChange} />
+            ) : (
+                <>
+                    <aside className="editor-sidebar-left"><ModuleSelector /></aside>
+                    <div className="editor-form-area"><div className="form-container"><FormBuilder /></div></div>
+                    <div className="editor-preview-area"><div className="a4-paper"><Previewer /></div></div>
+                </>
+            )}
         </div>
 
         <Modal 
@@ -210,9 +233,9 @@ const Editor = () => {
             width={380}
             centered
         >
+             {/* ... Login Modal Content ... */}
              <div style={{ textAlign: 'center', padding: '10px 0' }}>
                  <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
-                    {/* Placeholder for QR Code */}
                     <img src="/static/wechat_qr.jpg" alt="WeChat QR" style={{ width: 180, height: 180 }} />
                  </div>
                  

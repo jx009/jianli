@@ -18,15 +18,19 @@ router.post('/import', authMiddleware, upload.single('file'), async (req, res) =
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         
-        const parsedContent = await parseResumePdf(req.file.buffer);
+        // Extract params from body (Multer parses body too)
+        const { mode, templateId } = req.body;
+
+        const result = await parseResumePdf(req.file.buffer, { mode, templateId });
         
         // Create a new resume record immediately
         const newResume = await prisma.resume.create({
             data: {
-                title: '导入的简历',
-                content: parsedContent,
+                title: result.title || '导入的简历',
+                content: result.content,
                 userId: req.userId,
-                thumbnail: null // Placeholder
+                thumbnail: null,
+                // rawText: result.rawText // We could store this if we update schema
             }
         });
 

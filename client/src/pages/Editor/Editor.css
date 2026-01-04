@@ -135,3 +135,28 @@
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* --- Print / PDF Export Optimization --- */
+
+/* 1. 标题保护：标题后不能立即分页，必须带上至少一点内容 */
+.section-title {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/* 2. 内容分页策略：允许长内容被切断，但防止出现“孤行” */
+.row-desc, .text-content {
+  /* 也就是：如果必须要切断，页面底部至少留2行，下页顶部至少留2行 */
+  orphans: 2;
+  widows: 2;
+}
+
+/* 3. 原子保护：仅保护那些一旦切断就读不懂的小元素（如：学校+时间+学位这一行） */
+.row-header, .row-subheader {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* 移除之前过于激进的 .resume-item 和 .list-item-row 的 break-inside: avoid */
+
+

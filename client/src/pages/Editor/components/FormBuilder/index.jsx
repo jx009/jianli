@@ -123,6 +123,7 @@ const BaseInfoForm = ({ moduleId, data }) => {
                         className="avatar-uploader"
                         showUploadList={false}
                         action="/api/upload" 
+                        headers={{ Authorization: axios.defaults.headers.common['Authorization'] }}
                         onChange={handleUploadChange}
                         style={{ borderRadius: '50%' }}
                     >
