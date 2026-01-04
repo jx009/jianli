@@ -140,29 +140,86 @@ const Editor = () => {
 
   const handleDownload = async () => {
       setExporting(true);
-      const element = document.querySelector('.a4-paper') || document.querySelector('.free-editor-container');
-      if (!element) { message.error('无法找到简历内容'); setExporting(false); return; }
       try {
-          const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const imgProps = pdf.getImageProperties(imgData);
-          const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-          let heightLeft = imgHeight;
-          let position = 0;
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdfHeight;
-          while (heightLeft >= 0) {
-              position = heightLeft - imgHeight;
-              pdf.addPage();
-              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-              heightLeft -= pdfHeight;
-          }
-          pdf.save(`${resumeTitle || 'resume'}.pdf`);
-          message.success('导出成功');
-      } catch (error) { console.error(error); message.error('导出失败，请重试'); } finally { setExporting(false); }
+          const element = document.querySelector('.resume-canvas');
+          if (!element) { message.error('无法找到简历内容'); setExporting(false); return; }
+
+          // 1. 收集样式 (Styles & Links)
+          let styles = '';
+          document.querySelectorAll('style').forEach(style => {
+              styles += style.outerHTML;
+          });
+          
+          // 将相对路径的 link 转换为绝对路径，确保后端 Puppeteer 能加载
+          const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
+              return `<link rel="stylesheet" href="${link.href}" />`;
+          }).join('\n');
+
+          // 2. 构建完整 HTML
+          // 我们注入一段专门的打印样式来隐藏交互元素
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                ${links}
+                ${styles}
+                <style>
+                  html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
+                  .resume-canvas { 
+                     width: 210mm !important;
+                     min-height: 297mm !important;
+                     margin: 0 auto !important; 
+                     padding: 30px 40px !important;
+                     box-shadow: none !important; 
+                     /* 移除编辑器的分页红线 */
+                     background-image: none !important;
+                     overflow: visible !important;
+                  }
+                  /* 隐藏编辑器的交互组件 */
+                  .module-toolbar, 
+                  .add-btn-wrapper, 
+                  .item-ops,
+                  .dnd-kit-overlay { 
+                      display: none !important; 
+                  }
+                  /* 确保所有文本可见 */
+                  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                </style>
+              </head>
+              <body>
+                ${element.outerHTML}
+              </body>
+            </html>
+          `;
+
+          // 3. 调用后端生成 PDF
+          const response = await axios.post('/api/resumes/export', { htmlContent }, {
+              responseType: 'blob', // 重要：接收二进制流
+              timeout: 60000        // 生成 PDF 可能较慢，放宽超时
+          });
+
+          // 4. 触发下载
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${resumeTitle || 'resume'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          
+          // 清理
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          message.success('导出成功 (高清矢量版)');
+      } catch (error) { 
+          console.error('Export failed:', error); 
+          message.error('导出失败，请检查网络或重试'); 
+      } finally { 
+          setExporting(false); 
+      }
   };
 
   // --- FREE MODE LOGIC ---

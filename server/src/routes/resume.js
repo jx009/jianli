@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../index.js';
 import { authMiddleware } from '../utils/auth.js';
+import { exportResumePdf } from '../controllers/resumeController.js'; // Import the new controller
 
 import multer from 'multer';
 import { parseResumePdf } from '../services/importService.js';
@@ -12,6 +13,10 @@ const upload = multer({
 });
 
 const router = express.Router();
+
+// 4. 导出 PDF (Export PDF)
+// Body size limit increased for large HTML strings (10MB)
+router.post('/export', express.json({ limit: '10mb' }), exportResumePdf);
 
 // 0. 导入简历 (PDF Import)
 router.post('/import', authMiddleware, upload.single('file'), async (req, res) => {

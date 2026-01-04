@@ -78,17 +78,23 @@ export const deleteResume = async (req, res) => {
 // Export Resume as PDF
 export const exportResumePdf = async (req, res) => {
   try {
-    const host = req.get('host');
-    const pdfBuffer = await generatePDF(req.params.id, host);
+    const { htmlContent } = req.body;
+    
+    if (!htmlContent) {
+        return res.status(400).json({ error: 'HTML content is required' });
+    }
+
+    const pdfBuffer = await generatePDF(htmlContent);
     
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename=resume-${req.params.id}.pdf`,
+      'Content-Disposition': `attachment; filename=resume-export-${Date.now()}.pdf`,
       'Content-Length': pdfBuffer.length
     });
+    
     res.send(pdfBuffer);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'PDF Generation failed' });
+    console.error('PDF Export Error:', error);
+    res.status(500).json({ error: 'PDF Generation failed: ' + error.message });
   }
 };
